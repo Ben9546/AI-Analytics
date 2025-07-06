@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway-deployment
+  namespace: business-ai # Assuming a dedicated namespace
+  labels:
+    app: api-gateway
+    tier: backend
+spec:
+  replicas: 2 # Start with 2 replicas for basic availability
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway-container
+        # Replace with your actual image path in a container registry
+        # e.g., your-registry/business-ai-analytics/api-gateway:latest
+        image: business-ai-analytics/api-gateway:latest
+        imagePullPolicy: IfNotPresent # Or Always, depending on your tagging strategy
+        ports:
+        - containerPort: 8000 # Port exposed by the Docker container (uvicorn)
+        # --- Environment Variables ---
+        # Environment variables would be configured here, potentially from ConfigMaps or Secrets
+        # Example:
+        # env:
+        # - name: ANALYTICS_ENGINE_URL
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: app-config
+        #       key: analytics_engine_url
+        # - name: ML_MODELS_URL
+        #   value: "http://ml-models-service.business-ai.svc.cluster.local:8003" # Example internal k8s service DNS
+        # - name: DATABASE_URL
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: db-credentials
+        #       key: url
+
+        # --- Liveness and Readiness Probes ---
+        # These are important for Kubernetes to manage the health of your pods
+        livenessProbe:
+          httpGet:
+            path: / # Root path should return 200 OK for basic health check
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: / # Or a dedicated /healthz or /readyz endpoint
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # --- Resource Requests and Limits ---
+        # Define resource requests and limits to ensure stable performance and resource allocation
+        # These values are examples and should be tuned based on load testing and monitoring.
+        resources:
+          requests:
+            memory: "128Mi" # Request 128 Megabytes of RAM
+            cpu: "250m"    # Request 0.25 CPU cores (250 millicores)
+          limits:
+            memory: "256Mi" # Limit RAM to 256 Megabytes
+            cpu: "500m"    # Limit CPU to 0.5 CPU cores
+
+      # --- Other configurations ---
+      # - imagePullSecrets (if using a private registry)
+      # - volumes (for persistent storage or mounting ConfigMaps/Secrets as files)
+      # - nodeSelector, affinity, tolerations (for advanced scheduling)
+---
+# --- Example ConfigMap (conceptual, would be created separately) ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: app-config
+#   namespace: business-ai
+# data:
+#   analytics_engine_url: "http://analytics-engine-service.business-ai.svc.cluster.local:8002"
+#   ml_models_url: "http://ml-models-service.business-ai.svc.cluster.local:8003"
+#   notification_service_url: "http://notification-service.business-ai.svc.cluster.local:8004"
+
+# --- Example Secret (conceptual, would be created separately, likely using Sealed Secrets or Vault) ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: db-credentials
+#   namespace: business-ai
+# type: Opaque
+# stringData: # Or use 'data' for base64 encoded values
+#   username: "your_db_user"
+#   password: "your_db_password"
+#   url: "postgresql://your_db_user:your_db_password@your-db-host:5432/your_db_name"

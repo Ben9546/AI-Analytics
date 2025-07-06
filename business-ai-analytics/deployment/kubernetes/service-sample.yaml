@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-service
+  namespace: business-ai # Assuming a dedicated namespace
+  labels:
+    app: api-gateway
+spec:
+  type: ClusterIP # Default type, exposes the service on an internal IP in the cluster.
+                 # Change to LoadBalancer to expose externally on cloud providers (e.g., AWS ELB, GCP Load Balancer).
+                 # Change to NodePort to expose on a static port on each node's IP (mainly for development/testing).
+  selector:
+    app: api-gateway # This must match the labels of the pods targeted by this service (from the Deployment)
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80       # Port on which the service is exposed within the cluster
+    targetPort: 8000 # Port on the pods/containers (must match containerPort in Deployment)
+
+---
+# --- Example Ingress (conceptual, if you want to expose via an Ingress controller like Nginx or Traefik) ---
+# This provides HTTP/S routing, SSL termination, and name-based virtual hosting.
+# An Ingress controller must be running in the cluster.
+
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: api-gateway-ingress
+#   namespace: business-ai
+#   annotations:
+#     # Example annotations for Nginx Ingress controller:
+#     nginx.ingress.kubernetes.io/rewrite-target: /
+#     # For SSL, typically using cert-manager:
+#     # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+# spec:
+#   # ingressClassName: nginx # Specify if you have multiple ingress controllers or a default is not set
+#   rules:
+#   - host: "api.yourdomain.com" # Replace with your actual domain
+#     http:
+#       paths:
+#       - path: / # Route all paths for this host
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: api-gateway-service # Name of the Service defined above
+#             port:
+#               number: 80 # Port of the Service
+  # tls: # Optional: For HTTPS
+  # - hosts:
+  #   - "api.yourdomain.com"
+  #   secretName: api-gateway-tls-secret # Kubernetes secret containing TLS cert and key (often managed by cert-manager)
