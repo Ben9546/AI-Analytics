@@ -1,0 +1,2 @@
+# This directory will contain custom FastAPI middleware,
+# for example, for authentication, logging, or request processing.

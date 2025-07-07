@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+# Add any other specific dependencies if api-service evolves, e.g., for JWTs if doing its own validation
+python-jose[cryptography]
+passlib[bcrypt] # If handling any local password validation, though likely relies on an auth provider or main user system
+
+# Testing specific
+pytest
+httpx # For TestClient
+freezegun # If time-sensitive tests are needed

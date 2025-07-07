@@ -1,0 +1,68 @@
+# Stage 1: Build the React application
+FROM node:18-alpine AS builder
+
+LABEL maintainer="Jules AI Agent"
+LABEL description="Build stage for Web Dashboard Frontend (React+TypeScript)"
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json (or yarn.lock)
+# These should be copied before other files to leverage Docker cache for dependencies.
+COPY package.json ./
+# Assuming npm is used, copy package-lock.json. If yarn, copy yarn.lock.
+COPY package-lock.json ./
+# If you had a .npmrc for private registry, copy it here:
+# COPY .npmrc ./
+
+# Install dependencies
+# Using 'npm ci' for cleaner installs from lock file, preferred for CI/CD
+RUN npm ci
+
+# Copy the rest of the application source code
+COPY . .
+
+# Build the application for production
+# The build script is defined in package.json (e.g., "react-scripts build")
+RUN npm run build
+
+# Stage 2: Serve the application using a lightweight web server (Nginx)
+FROM nginx:1.25-alpine
+
+LABEL maintainer="Jules AI Agent"
+LABEL description="Runtime stage for Web Dashboard Frontend (React+TypeScript with Nginx)"
+
+# Copy the build output from the 'builder' stage to Nginx's web root directory
+COPY --from=builder /app/build /usr/share/nginx/html
+
+# Optional: Copy a custom Nginx configuration file.
+# This is often needed for single-page applications (SPAs) like React
+# to ensure client-side routing works correctly (e.g., redirecting all 404s to index.html).
+# Create an 'nginx.conf' file in the 'frontend' directory alongside this Dockerfile.
+# Example: COPY nginx.conf /etc/nginx/conf.d/default.conf
+# If not provided, Nginx will use its default configuration.
+
+# Default Nginx configuration typically serves index.html from the root.
+# For React Router, you might need a configuration like this (in nginx.conf):
+# server {
+#   listen 80;
+#   server_name localhost;
+#
+#   root /usr/share/nginx/html;
+#   index index.html index.htm;
+#
+#   location / {
+#     try_files $uri $uri/ /index.html;
+#   }
+#
+#   # Optional: Add caching headers for static assets to improve performance
+#   location ~* \.(?:css|js|jpg|jpeg|gif|png|ico|svg|woff|woff2|ttf|eot)$ {
+#     expires 1y;
+#     add_header Cache-Control "public";
+#   }
+# }
+
+# Expose port 80 (standard HTTP port Nginx listens on by default)
+EXPOSE 80
+
+# Command to start Nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]

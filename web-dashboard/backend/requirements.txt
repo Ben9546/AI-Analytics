@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+httpx # For TestClient and general HTTP calls if any service used it
+# Testing specific
+pytest
+freezegun

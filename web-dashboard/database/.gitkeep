@@ -1,0 +1,5 @@
+# This directory will hold database-related files, such as:
+# - Migrations (e.g., Alembic for SQLAlchemy, or custom scripts)
+# - Database schema definitions (e.g., SQL DDL, diagrams)
+# - Seed scripts for populating initial data
+# - Utility scripts for database management tasks

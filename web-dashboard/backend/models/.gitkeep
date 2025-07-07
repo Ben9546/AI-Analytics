@@ -1,0 +1,2 @@
+# This directory will hold Pydantic models for data validation and serialization,
+# and potentially ORM models if a database ORM is used.
